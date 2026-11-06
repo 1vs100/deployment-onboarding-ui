@@ -1,5 +1,7 @@
 # Deployment onboarding UI
 
+[![CI](https://github.com/1vs100/deployment-onboarding-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/1vs100/deployment-onboarding-ui/actions/workflows/ci.yml)
+
 The file setup screen a game shows on a device that has no game files yet, plus the phone page that sends them over the local network.
 
 - One design, two renderers: pick Dear ImGui or plain SDL3 at build time.
@@ -126,6 +128,19 @@ cmake -S . -B build -DONBOARDING_UI_FLAVOR=sdl3
 cmake --build build -j8
 ctest --test-dir build
 ```
+
+A Windows store package needs its own file calls and its own linker settings, so
+it builds through `cmake/uwp-clang-cl.cmake`, without the demo or the tests:
+
+```
+cmake -G Ninja -S . -B build-uwp -DCMAKE_TOOLCHAIN_FILE=cmake/uwp-clang-cl.cmake \
+  -DONBOARDING_UI_WINRT=ON -DONBOARDING_UI_SDL_INCLUDE_DIR=<sdl3>/include \
+  -DONBOARDING_UI_BUILD_DEMO=OFF -DONBOARDING_UI_BUILD_TESTS=OFF
+cmake --build build-uwp
+```
+
+`.github/workflows/ci.yml` does the same three builds, for both flavors, on
+ubuntu-24.04 and windows-2022.
 
 ## License
 

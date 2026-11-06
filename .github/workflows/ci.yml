@@ -15,7 +15,7 @@ jobs:
       matrix:
         flavor: [sdl3, imgui]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # SDL3 comes from source because no runner image ships 3.x yet. The X11,
       # Wayland and KMSDRM drivers are off, so the container needs no graphics
       # stack: the demo captures through the dummy driver.
@@ -39,7 +39,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: Capture the pages headlessly
         run: SDL_VIDEODRIVER=dummy ./build/deployment_onboarding_demo --capture build/shots
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: screenshots-linux-${{ matrix.flavor }}
           path: build/shots
@@ -52,7 +52,7 @@ jobs:
       matrix:
         flavor: [sdl3, imgui]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build SDL3
         run: |
           git clone --depth 1 --branch release-3.4.18 https://github.com/libsdl-org/SDL.git C:\sdl
@@ -72,7 +72,7 @@ jobs:
         run: |
           $env:SDL_VIDEODRIVER = "dummy"
           .\build\Release\deployment_onboarding_demo.exe --capture build\shots
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: screenshots-windows-${{ matrix.flavor }}
           path: build/shots
@@ -85,7 +85,7 @@ jobs:
       matrix:
         flavor: [sdl3, imgui]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # The store build only needs the SDL headers: a static library links
       # nothing, and the host that consumes this one links SDL3-uwp itself.
       - name: Fetch the SDL3 headers
