@@ -86,8 +86,8 @@ ui::Scene App::BuildScene(int focused) { return ui::BuildScene(MakePage(focused)
 void App::Activate(int button) {
   switch (screen_) {
     case ui::Screen::kGetFiles:
-      if (button == 0 && platform_.pick_folder) platform_.pick_folder();
-      if (button == 1 && platform_.pick_files) platform_.pick_files();
+      if (button == 0 && platform_.pick_folder) platform_.pick_folder(store_, catalog_);
+      if (button == 1 && platform_.pick_files) platform_.pick_files(store_, catalog_);
       break;
     case ui::Screen::kReady:
       if (button == 0) screen_ = ui::Screen::kDone;

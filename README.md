@@ -19,8 +19,12 @@ The library exports one entry point and one struct of platform functions:
 
 onboarding::Platform platform;
 platform.run_worker = [](std::function<void()> work) { /* run off the UI thread */ };
-platform.pick_folder = [&] { /* open a folder picker, then copy on a worker */ };
-platform.pick_files = [&] { /* open a file picker, then copy on a worker */ };
+platform.pick_folder = [](onboarding::FileStore& store, onboarding::Catalog& catalog) {
+  // open a folder picker, then copy on a worker
+};
+platform.pick_files = [](onboarding::FileStore& store, onboarding::Catalog& catalog) {
+  // open a file picker, then copy on a worker
+};
 platform.pickers_available = [] { return true; };
 platform.transfer_active = [] { return false; };
 platform.lan_urls = [] { return std::vector<std::string>{"http://192.168.1.42"}; };

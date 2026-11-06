@@ -29,9 +29,10 @@ struct Platform {
   // Runs background work; may block. Worker lifetime is the caller's problem.
   std::function<void(std::function<void()>)> run_worker;
   // Pickers must start on the UI thread and copy on a worker. Both return
-  // immediately and report through the catalog.
-  std::function<void()> pick_folder;
-  std::function<void()> pick_files;
+  // immediately and report through the catalog they are handed, because the
+  // store and the per-file state belong to the view, not to the host.
+  std::function<void(FileStore&, Catalog&)> pick_folder;
+  std::function<void(FileStore&, Catalog&)> pick_files;
   // False on a console with no USB drive attached, where the pickers cannot
   // reach anything.
   std::function<bool()> pickers_available;
