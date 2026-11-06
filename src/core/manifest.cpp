@@ -96,7 +96,10 @@ Manifest Manifest::Parse(std::string_view text) {
 }
 
 const Manifest& Manifest::Embedded() {
-  static const Manifest manifest = Parse(kEmbeddedManifest);
+  // The array is the exact file bytes, so its size bounds the view; reading it
+  // as a C string would run past the end when the file has no trailing NUL.
+  static const Manifest manifest =
+      Parse(std::string_view(kEmbeddedManifest, sizeof(kEmbeddedManifest)));
   return manifest;
 }
 
