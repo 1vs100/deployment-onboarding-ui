@@ -10,6 +10,9 @@ set(ONBOARDING_UI_FLAVOR "sdl3" CACHE STRING
 set_property(CACHE ONBOARDING_UI_FLAVOR PROPERTY STRINGS imgui sdl3)
 set(ONBOARDING_UI_MANIFEST "" CACHE FILEPATH
     "File list the game needs, embedded into the library")
+set(ONBOARDING_UI_SDL_INCLUDE_DIR "" CACHE PATH
+    "SDL3 include directory for hosts that provide SDL themselves")
+option(ONBOARDING_UI_WINRT "Build for a store app, where the app container needs its own file calls" OFF)
 option(ONBOARDING_UI_BUILD_DEMO "Build the capture demo" ${PROJECT_IS_TOP_LEVEL})
 option(ONBOARDING_UI_BUILD_TESTS "Build the layout tests" ${PROJECT_IS_TOP_LEVEL})
 
@@ -59,7 +62,7 @@ set(SOURCES
   "${GENERATED}/web_page.h"
   "${GENERATED}/font_data.h")
 
-if(WIN32)
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
   list(APPEND SOURCES src/platform/file_io_winrt.cpp src/platform/sha256_win32.cpp)
 else()
   list(APPEND SOURCES src/platform/file_io_posix.cpp src/platform/sha256_posix.cpp)
@@ -91,6 +94,15 @@ target_include_directories(deployment_onboarding_ui
     "${GENERATED}")
 
 target_compile_definitions(deployment_onboarding_ui PRIVATE IMGUI_DISABLE_DEMO_WINDOWS)
+if(ONBOARDING_UI_WINRT)
+  target_compile_definitions(deployment_onboarding_ui PRIVATE REX_PLATFORM_WINRT=1)
+endif()
+if(ONBOARDING_UI_SDL_INCLUDE_DIR)
+  target_include_directories(deployment_onboarding_ui PRIVATE "${ONBOARDING_UI_SDL_INCLUDE_DIR}")
+endif()
+if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+  target_link_libraries(deployment_onboarding_ui PRIVATE bcrypt)
+endif()
 
 # A host that provides SDL itself (a console prefix, a vendored copy) does not
 # need this; the standalone build does.

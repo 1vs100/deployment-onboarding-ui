@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: linux ${{ matrix.flavor }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [sdl3, imgui]
+    steps:
+      - uses: actions/checkout@v4
+      # SDL3 comes from source because no runner image ships 3.x yet. The X11,
+      # Wayland and KMSDRM drivers are off, so the container needs no graphics
+      # stack: the demo captures through the dummy driver.
+      - name: Build SDL3
+        run: |
+          git clone --depth 1 --branch release-3.4.18 https://github.com/libsdl-org/SDL.git "$RUNNER_TEMP/sdl"
+          cmake -G Ninja -S "$RUNNER_TEMP/sdl" -B "$RUNNER_TEMP/sdl-build" \
+            -DCMAKE_BUILD_TYPE=Release -DSDL_SHARED=OFF -DSDL_STATIC=ON \
+            -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF \
+            -DSDL_X11=OFF -DSDL_WAYLAND=OFF -DSDL_KMSDRM=OFF -DSDL_UNIX_CONSOLE_BUILD=ON
+          cmake --build "$RUNNER_TEMP/sdl-build" -j 4
+          cmake --install "$RUNNER_TEMP/sdl-build" --prefix "$RUNNER_TEMP/sdl-prefix"
+      - name: Configure
+        run: >
+          cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/sdl-prefix"
+          -DONBOARDING_UI_FLAVOR=${{ matrix.flavor }}
+      - name: Build
+        run: cmake --build build -j 4
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Capture the pages headlessly
+        run: SDL_VIDEODRIVER=dummy ./build/deployment_onboarding_demo --capture build/shots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-linux-${{ matrix.flavor }}
+          path: build/shots
+
+  windows:
+    name: windows ${{ matrix.flavor }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [sdl3, imgui]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build SDL3
+        run: |
+          git clone --depth 1 --branch release-3.4.18 https://github.com/libsdl-org/SDL.git C:\sdl
+          cmake -S C:\sdl -B C:\sdl-build -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF
+          cmake --build C:\sdl-build --config Release --parallel
+          cmake --install C:\sdl-build --config Release --prefix C:\sdl-prefix
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_PREFIX_PATH=C:\sdl-prefix
+          -DONBOARDING_UI_FLAVOR=${{ matrix.flavor }}
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+  uwp:
+    name: uwp ${{ matrix.flavor }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [sdl3, imgui]
+    steps:
+      - uses: actions/checkout@v4
+      # The store build only needs the SDL headers: a static library links
+      # nothing, and the host that consumes this one links SDL3-uwp itself.
+      - name: Fetch the SDL3 headers
+        run: git clone --depth 1 --branch release-3.4.18 https://github.com/libsdl-org/SDL.git C:\sdl
+      - name: Configure
+        run: >
+          cmake -S . -B build-uwp -G Ninja
+          -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\cmake\uwp-clang-cl.cmake"
+          -DCMAKE_BUILD_TYPE=Release
+          -DONBOARDING_UI_FLAVOR=${{ matrix.flavor }}
+          -DONBOARDING_UI_WINRT=ON
+          -DONBOARDING_UI_SDL_INCLUDE_DIR=C:\sdl\include
+          -DONBOARDING_UI_BUILD_DEMO=OFF
+          -DONBOARDING_UI_BUILD_TESTS=OFF
+      - name: Build
+        run: cmake --build build-uwp --parallel
