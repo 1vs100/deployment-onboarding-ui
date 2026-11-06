@@ -55,6 +55,7 @@ set(SOURCES
   src/gate.cpp
   src/ui/input.cpp
   src/ui/layout.cpp
+  src/ui/qr.cpp
   src/ui/view.cpp
   src/web/status_json.cpp
   src/thirdparty/qrcodegen/qrcodegen.cpp
@@ -139,4 +140,7 @@ if(ONBOARDING_UI_BUILD_TESTS)
   target_include_directories(onboarding_layout_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/src" "${GENERATED}")
   add_test(NAME onboarding_layout_test COMMAND onboarding_layout_test)
+  add_executable(onboarding_qr_test tests/qr_test.cpp)
+  target_link_libraries(onboarding_qr_test PRIVATE deployment_onboarding_ui)
+  add_test(NAME onboarding_qr_test COMMAND onboarding_qr_test)
 endif()

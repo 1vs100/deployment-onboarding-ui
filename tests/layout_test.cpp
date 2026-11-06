@@ -112,6 +112,18 @@ int main() {
   Check(!no_usb.buttons[0].enabled && !no_usb.buttons[1].enabled, "no USB: both buttons disabled");
   CheckScene(no_usb, "no USB");
 
+  // An address that fits no QR version skips the symbol instead of throwing,
+  // but the phone panel and its caption stay.
+  ui::Page too_long = MakePage(catalog, ui::Screen::kGetFiles, false);
+  too_long.urls = {std::string(5000, 'x')};
+  const ui::Scene long_url = ui::BuildScene(too_long);
+  Check(!long_url.qr.has_value(), "over-long url: no QR symbol");
+  Check(!long_url.panels.empty(), "over-long url: the phone panel stays");
+  bool has_caption = false;
+  for (const auto& text : long_url.texts) has_caption = has_caption || text.text == "Scan with a phone";
+  Check(has_caption, "over-long url: the caption stays");
+  CheckScene(long_url, "over-long url");
+
   if (failures) std::fprintf(stderr, "%d layout check(s) failed\n", failures);
   return failures ? 1 : 0;
 }

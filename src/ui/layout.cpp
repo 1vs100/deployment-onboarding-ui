@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <string>
 
-#include "thirdparty/qrcodegen/qrcodegen.hpp"
+#include "onboarding/qr.h"
 #include "ui/design.h"
 
 namespace onboarding::ui {
@@ -135,21 +135,13 @@ void AddGetFiles(Scene& scene, const Page& page) {
   // anyone who would rather type it.
   if (!page.urls.empty()) {
     scene.panels.push_back({{kMargin, 208, 288, 316}, color::kSurface, true});
-    const QrBlock block = [&] {
+    if (QrMatrix encoded = EncodeQr(page.urls.front()); encoded.modules > 0) {
       QrBlock qr;
-      const qrcodegen::QrCode code =
-          qrcodegen::QrCode::encodeText(page.urls.front().c_str(), qrcodegen::QrCode::Ecc::MEDIUM);
       qr.box = {kMargin + 24, 232, 240, 240};
-      qr.modules = code.getSize();
-      qr.bits.resize(static_cast<size_t>(qr.modules) * qr.modules);
-      for (int row = 0; row < qr.modules; ++row) {
-        for (int col = 0; col < qr.modules; ++col) {
-          qr.bits[static_cast<size_t>(row) * qr.modules + col] = code.getModule(col, row) ? 1 : 0;
-        }
-      }
-      return qr;
-    }();
-    scene.qr = block;
+      qr.modules = encoded.modules;
+      qr.bits = std::move(encoded.bits);
+      scene.qr = std::move(qr);
+    }
     AddText(scene, {kMargin, 488, 288, 26}, "Scan with a phone", TextSize::kSmall, color::kTextMuted,
             TextAlign::kCenter);
   }
