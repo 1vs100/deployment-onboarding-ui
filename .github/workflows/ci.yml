@@ -68,6 +68,14 @@ jobs:
         run: cmake --build build --config Release --parallel
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+      - name: Capture the pages headlessly
+        run: |
+          $env:SDL_VIDEODRIVER = "dummy"
+          .\build\Release\deployment_onboarding_demo.exe --capture build\shots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-windows-${{ matrix.flavor }}
+          path: build/shots
 
   uwp:
     name: uwp ${{ matrix.flavor }}

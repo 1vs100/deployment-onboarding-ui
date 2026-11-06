@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     const std::filesystem::path path = output / kFlavor / (name + ".png");
     std::filesystem::create_directories(path.parent_path());
     if (!ui::CaptureFrame(session, ui::BuildScene(page), path, &error)) {
-      std::fprintf(stderr, "capture %s failed: %s\n", path.c_str(), error.c_str());
+      std::fprintf(stderr, "capture %s failed: %s\n", path.string().c_str(), error.c_str());
       return false;
     }
     std::printf("%s %s\n", kFlavor, path.c_str());

@@ -62,8 +62,11 @@ set(SOURCES
   "${GENERATED}/web_page.h"
   "${GENERATED}/font_data.h")
 
-if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore" OR ONBOARDING_UI_WINRT)
+  # The AppContainer entry points only link for a store package.
   list(APPEND SOURCES src/platform/file_io_winrt.cpp src/platform/sha256_win32.cpp)
+elseif(WIN32)
+  list(APPEND SOURCES src/platform/file_io_win32.cpp src/platform/sha256_win32.cpp)
 else()
   list(APPEND SOURCES src/platform/file_io_posix.cpp src/platform/sha256_posix.cpp)
 endif()
