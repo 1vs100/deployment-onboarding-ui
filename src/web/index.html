@@ -116,22 +116,12 @@ let status = null;
 let busy = false;
 const inflight = new Map();  // manifest path -> bytes sent
 
-function lower(s) { return s.toLowerCase(); }
-
-// Same rule as the console: exact path, else the shortest leading-folder
-// strip whose suffix names exactly one manifest file.
-function matchPath(path) {
-  const files = status ? status.files : [];
-  const exact = files.find(f => lower(f.path) === lower(path));
-  if (exact) return exact;
-  let parts = path.split("/");
-  while (parts.length) {
-    const suffix = lower(parts.join("/"));
-    const hits = files.filter(f => lower(f.path) === suffix || lower(f.path).endsWith("/" + suffix));
-    if (hits.length === 1) return hits[0];
-    parts = parts.slice(1);
-  }
-  return null;
+// The console matches picked paths to manifest files, so the page follows
+// whatever naming rules the host accepts.
+async function matchPaths(paths) {
+  const r = await fetch("/match", { method: "POST", body: paths.join("\n"), cache: "no-store" });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
 }
 
 function fmt(bytes) {
@@ -225,8 +215,18 @@ async function handle(items) {
   await refresh();
   const queue = [];
   const seen = new Set();
-  for (const { file, path } of items) {
-    const entry = matchPath(path);
+  // A line break would split one path into two lines of the request.
+  items = items.filter(({ path }) => !path.includes("\n"));
+  let matches;
+  try {
+    matches = await matchPaths(items.map(({ path }) => path));
+  } catch (e) {
+    log(`Could not ask the console which files it needs: ${e.message}`, "bad");
+    busy = false;
+    return;
+  }
+  for (const [i, { file, path }] of items.entries()) {
+    const entry = status.files.find(f => f.path === matches[i]);
     if (!entry) { log(`${path}: not a needed file, skipped`); continue; }
     if (entry.state === "ok" || entry.covered || seen.has(entry.path)) continue;
     if (file.size !== entry.size) {

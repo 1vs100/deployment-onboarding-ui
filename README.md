@@ -53,6 +53,9 @@ Serving the phone page needs two more calls, because sockets belong to the host:
 
 server->on_page = [] { return onboarding::WebPage(); };          // GET /
 server->on_status = [&] { return onboarding::StatusJson(catalog.Take()); };  // GET /status
+server->on_match = [&](std::string_view body) {                  // POST /match
+  return onboarding::MatchJson(manifest, body, [&](auto p) { return manifest.Match(p); });
+};
 file_store.Ingest(index, read);                                   // PUT /upload/<path>
 ```
 

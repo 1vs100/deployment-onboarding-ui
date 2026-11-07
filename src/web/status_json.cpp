@@ -32,6 +32,19 @@ std::string JsonString(std::string_view text) {
 
 }  // namespace
 
+std::string MatchJson(const Manifest& manifest, std::string_view paths, const PathMatcher& match) {
+  std::string json = "[";
+  while (!paths.empty()) {
+    const size_t end = paths.find('\n');
+    const std::string_view path = paths.substr(0, end);
+    paths = end == std::string_view::npos ? std::string_view() : paths.substr(end + 1);
+    if (json.size() > 1) json += ',';
+    const auto index = match(path);
+    json += index ? JsonString(manifest.entries()[*index].path) : "null";
+  }
+  return json + "]";
+}
+
 std::string StatusJson(const Snapshot& snapshot) {
   std::string json = "{\"files\":[";
   for (size_t i = 0; i < snapshot.files.size(); ++i) {
